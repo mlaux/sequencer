@@ -4,6 +4,7 @@
 
 #pragma comment(lib, "winmm.lib") // todo: remove vs-only code
 
+#define APP_NAME "Sequencer"
 #define STEPS_PER_BEAT 4 // sixteenth notes
 #define BEATS_PER_MEASURE 4
 #define MEASURES_PER_PTN 4
@@ -102,7 +103,7 @@ void change_midi_device(HWND combo_box)
 	midiOutOpen(&cur_device, index, 0, 0, 0);
 }
 
-void populate_midi_devices(HWND dialog)
+int populate_midi_devices(HWND dialog)
 {
 	int k, num_devices;
 	MIDIOUTCAPS moc;
@@ -118,15 +119,23 @@ void populate_midi_devices(HWND dialog)
 	if (num_devices > 0) {
 		SendMessage(device_list, CB_SETCURSEL, 0, 0);
 		change_midi_device(device_list);
+		return TRUE;
 	}
+
+	MessageBox(dialog, "Couldn't find any MIDI devices - check your USB cables and restart " APP_NAME ".", APP_NAME, 0);
+	return FALSE;
 }
 
 BOOL CALLBACK dialog_proc(HWND dialog, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg) {
 	case WM_INITDIALOG:
-		populate_midi_devices(dialog);
-		setup_timer(120);
+		if (populate_midi_devices(dialog)) {
+			setup_timer(120);
+		}
+		else {
+			EndDialog(dialog, 0);
+		}
 		return TRUE;
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
